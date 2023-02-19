@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Home WLAN QR Code Generator</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    />
+  </head>
+
+  <body>
+    <div class="container my-5">
+      <h1 class="text-center">Home WLAN QR Code Generator</h1>
+      <form id="generate-form">
+        <div class="mb-3">
+          <label for="ssid" class="form-label">SSID</label>
+          <input type="text" class="form-control" id="ssid" required />
+        </div>
+        <div class="mb-3">
+          <label for="encryption" class="form-label">Encryption Type</label>
+          <select class="form-select" id="encryption" required>
+            <option value="WPA">WPA/WPA2</option>
+            <option value="WEP">WEP</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+        <div class="mb-3" id="password-group">
+          <label for="password" class="form-label">Password</label>
+          <input type="password" class="form-control" id="password" />
+        </div>
+        <button type="submit" class="btn btn-primary">Generate QR Code</button>
+      </form>
+      <canvas id="qrcode" class="my-3"></canvas>
+      <div class="mb-3">
+        <button
+          class="btn btn-secondary"
+          style="display: none"
+          id="print-button"
+        >
+          Print QR Code
+        </button>
+      </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+
+    <!-- QR Code JS -->
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        // Show/hide password input based on encryption type
+        var encryptionSelect = $("#encryption");
+        var passwordGroup = $("#password-group");
+        encryptionSelect.on("change", function () {
+          var encryption = encryptionSelect.val();
+          if (encryption === "none") {
+            passwordGroup.hide();
+          } else {
+            passwordGroup.show();
+          }
+        });
+
+        // Generate QR code and prevent form submission
+        $("form").submit(function (event) {
+          event.preventDefault();
+
+          var ssid = $("#ssid").val();
+          var encryption = $("#encryption").val();
+          var password = $("#password").val();
+          var wifiString = "WIFI:";
+          wifiString += "T:" + encryption + ";";
+          wifiString += "S:" + ssid + ";";
+          if (encryption !== "none" && password) {
+            wifiString += "P:" + password + ";";
+          }
+          wifiString += ";";
+
+          var qr = new QRious({
+            element: document.getElementById("qrcode"),
+            value: wifiString,
+            size: 256,
+            foreground: "#000000",
+            background: "#ffffff",
+          });
+          var canvas = $("#qrcode")[0]; // Get the canvas element
+          var button = $("#print-button"); // Get the button element
+
+          // When the canvas has a source, show the button
+          if (canvas.src !== "") {
+            button.show();
+          }
+        });
+
+        // Print QR code
+        $("#print-button").on("click", function () {
+          var canvas = $("#qrcode")[0];
+          var img = canvas.toDataURL("image/png");
+          var printWindow = window.open();
+          printWindow.document.write(
+            "<div class='qr-print-container'> <h1 class='mb-3'>W-Lan QR Code</h1><img src='" +
+              img +
+              "'/></div>"
+          );
+          printWindow.document.close();
+          printWindow.onload = function () {
+            var container = printWindow.document.querySelector(
+              ".qr-print-container"
+            );
+            container.style.display = "flex";
+            container.style.flexDirection = "column";
+            container.style.alignItems = "center";
+            container.style.justifyContent = "center";
+            container.style.height = "100%";
+            printWindow.print();
+          };
+        });
+      });
+    </script>
+  </body>
+</html>
